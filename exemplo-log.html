@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Tarefas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #b6b6b6;
+            margin: 0;
+            padding: 20px;
+        }
+        #formTarefa {
+            margin-bottom: 20px;
+        }
+        #containerTarefas {
+            background: #fff;
+            border: 3px solid #000000;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .tarefa {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .tarefa:last-child {
+            border-bottom: none;
+        }
+        .acoes-tarefa {
+            margin-top: 10px;
+        }
+        .botao-editar, .botao-excluir, .botao-incluir {
+            background-color: #1adf00;
+            color: #fff;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+        .botao-editar:hover {
+            background-color: #0c0075;
+        }
+        .botao-excluir:hover {
+            background-color: #750000;
+            color: #fff;
+        }
+        .botao-incluir:hover {
+            background-color: #00750a;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <form id="formTarefa">
+        <h2>Adicionar Tarefa:</h2>
+        <p><input type="text" id="inputTarefa" placeholder="Digite uma tarefa" required>
+        <button class="botao-incluir" type="submit">Incluir</button></p>
+    </form>
+
+    <div id="tarefas">
+        <h2>Tarefas pendentes:</h2>
+        <div id="containerTarefas">
+            <!-- Tarefas serão exibidas aqui -->
+        </div>
+    </div>
+
+    <script>
+        // Array para armazenar as tarefas
+        const tarefas = [
+            { id: 1, descricao: 'Comprar leite' },
+            { id: 2, descricao: 'Estudar JavaScript' },
+            { id: 3, descricao: 'Fazer exercícios físicos' }
+        ];
+
+        // Função para carregar e exibir tarefas
+        function carregarTarefas() {
+            console.log('Carregando tarefas...');
+            const containerTarefas = document.getElementById('containerTarefas');
+            containerTarefas.innerHTML = ''; // Limpa o conteúdo atual
+
+            tarefas.forEach(tarefa => {
+                console.log('Criando tarefa:', tarefa);
+                const elementoTarefa = document.createElement('div');
+                elementoTarefa.className = 'tarefa';
+                elementoTarefa.innerHTML = `
+                    <div class="conteudo-tarefa">
+                        <strong>Tarefa ${tarefa.id}:</strong> ${tarefa.descricao}
+                    </div>
+                    <div class="acoes-tarefa">
+                        <button class="botao-editar" data-id="${tarefa.id}">Editar</button>
+                        <button class="botao-excluir" data-id="${tarefa.id}">Excluir</button>
+                    </div>
+                `;
+                containerTarefas.appendChild(elementoTarefa);
+            });
+
+            // Adiciona manipuladores de eventos para os botões de exclusão e edição
+            document.querySelectorAll('.botao-excluir').forEach(botao => {
+                botao.addEventListener('click', function() {
+                    const id = parseInt(this.getAttribute('data-id'));
+                    console.log('Excluir tarefa com ID:', id);
+                    const index = tarefas.findIndex(t => t.id === id);
+                    if (index > -1) {
+                        tarefas.splice(index, 1); // Remove a tarefa do array
+                        console.log('Tarefa excluída:', id);
+                        carregarTarefas(); // Atualiza a lista de tarefas
+                    }
+                });
+            });
+
+            document.querySelectorAll('.botao-editar').forEach(botao => {
+                botao.addEventListener('click', function() {
+                    const id = parseInt(this.getAttribute('data-id'));
+                    console.log('Editar tarefa com ID:', id);
+                    const tarefa = tarefas.find(t => t.id === id);
+                    const novaDescricao = prompt('Editar tarefa:', tarefa.descricao);
+                    if (novaDescricao && novaDescricao.trim() !== '') {
+                        tarefa.descricao = novaDescricao.trim(); // Atualiza a descrição da tarefa
+                        console.log('Tarefa atualizada:', tarefa);
+                        carregarTarefas(); // Atualiza a lista de tarefas
+                    }
+                });
+            });
+        }
+
+        // Carregar tarefas quando a página for carregada
+        window.onload = function() {
+            console.log('Página carregada');
+            carregarTarefas();
+        };
+
+        // Manipulador de envio de formulário
+        document.getElementById('formTarefa').addEventListener('submit', function(evento) {
+            evento.preventDefault();
+            const descricao = document.getElementById('inputTarefa').value.trim();
+            if (descricao) {
+                const novaTarefa = {
+                    id: tarefas.length ? tarefas[tarefas.length - 1].id + 1 : 1,
+                    descricao: descricao
+                };
+                tarefas.push(novaTarefa); // Adiciona a nova tarefa ao array
+                console.log('Nova tarefa adicionada:', novaTarefa);
+                carregarTarefas(); // Atualiza a lista de tarefas
+                this.reset(); // Limpa o formulário
+            }
+        });
+    </script>
+</body>
+</html>
