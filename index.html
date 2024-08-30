@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD de Tarefas com Firebase</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #c5c5c5;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        form, #tarefas {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 100%;
+            margin: 10px 0;
+            box-sizing: border-box;
+        }
+        input, button {
+            width: calc(100% - 22px); /* Ajusta a largura para considerar padding e border */
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box; /* Inclui padding e border na largura total */
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .tarefa {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 10px;
+            position: relative;
+            background-color: #c5c5c5;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .tarefa:last-child {
+            margin-bottom: 0;
+        }
+        .conteudo-tarefa {
+            flex: 1;
+        }
+        .acoes-tarefa {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .acoes-tarefa button {
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .botao-excluir, .botao-editar, .botao-incluir {
+            background-color: #00e700;
+            color: white;
+        }
+        .botao-incluir:hover {
+            background-color: #0b8500;
+        }
+        .botao-excluir:hover {
+            background-color: #c82333;
+        }
+        .botao-editar:hover {
+            background-color: #0056b3;
+        }
+        
+
+        /* Estilo para telas menores */
+        @media (max-width: 600px) {
+            input, button {
+                width: 100%;
+                margin: 5px 0;
+            }
+            .tarefa {
+                padding: 10px;
+                font-size: 14px;
+            }
+            .acoes-tarefa {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .acoes-tarefa button {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <form id="formTarefa">
+        <h2>Adicione uma nova tarefa</h2>
+        <input type="text" id="inputTarefa" placeholder="Descrição" required>
+        <button class="botao-incluir" type="submit">Adicionar Tarefa</button>
+    </form>
+
+    <div id="tarefas">
+        <h2>Tarefas pendentes:</h2>
+        <div id="containerTarefas">
+            <!-- Tarefas serão exibidas aqui -->
+        </div>
+    </div>
+
+    <!-- Importando SDKs do Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+        // Configurações do Firebase
+        const configuracaoFirebase = {
+            apiKey: "AIzaSyB9BVAkufpu-8dDPJcFD-IRZ3FpBChfU7U",
+            authDomain: "lista-7534e.firebaseapp.com",
+            projectId: "lista-7534e",
+            storageBucket: "lista-7534e.appspot.com",
+            messagingSenderId: "715236886305",
+            appId: "1:715236886305:web:1c5f0c00502c34bd4ae060"
+        };
+
+        // Inicializar Firebase
+        const app = initializeApp(configuracaoFirebase);
+        const db = getFirestore(app);
+
+        // Manipulador de envio de formulário
+        document.getElementById('formTarefa').addEventListener('submit', async function(evento) {
+            evento.preventDefault();
+
+            const tarefa = document.getElementById('inputTarefa').value;
+
+            try {
+                await addDoc(collection(db, 'tarefas'), {
+                    tarefa: tarefa
+                });
+                alert('Tarefa adicionada com sucesso!');
+                document.getElementById('formTarefa').reset();
+                carregarTarefas(); // Carregar tarefas após envio
+            } catch (erro) {
+                console.error('Erro ao adicionar a tarefa:', erro);
+                alert('Houve um erro ao adicionar a tarefa. Erro: ' + erro.message);
+            }
+        });
+
+        // Função para carregar tarefas do Firestore
+        async function carregarTarefas() {
+            const containerTarefas = document.getElementById('containerTarefas');
+            containerTarefas.innerHTML = ''; // Limpa o conteúdo atual
+
+            try {
+                const consultaSnapshot = await getDocs(collection(db, 'tarefas'));
+                consultaSnapshot.forEach((snapshotDoc) => {
+                    const dados = snapshotDoc.data();
+                    const elementoTarefa = document.createElement('div');
+                    elementoTarefa.className = 'tarefa';
+                    elementoTarefa.innerHTML = `
+                        <div class="conteudo-tarefa">
+                            <strong>Tarefa:</strong> ${dados.tarefa}
+                        </div>
+                        <div class="acoes-tarefa">
+                            <button class="botao-editar" data-id="${snapshotDoc.id}">Editar</button>
+                            <button class="botao-excluir" data-id="${snapshotDoc.id}">Excluir</button>
+                        </div>
+                    `;
+                    containerTarefas.appendChild(elementoTarefa);
+                });
+
+                // Adiciona manipulador de eventos para os botões de exclusão e edição
+                document.querySelectorAll('.botao-excluir').forEach(botao => {
+                    botao.addEventListener('click', async function() {
+                        const id = this.getAttribute('data-id');
+                        try {
+                            await deleteDoc(doc(db, 'tarefas', id));
+                            alert('Tarefa excluída com sucesso!');
+                            carregarTarefas(); // Atualiza a lista de tarefas
+                        } catch (erro) {
+                            console.error('Erro ao excluir a tarefa:', erro);
+                            alert('Houve um erro ao excluir a tarefa. Erro: ' + erro.message);
+                        }
+                    });
+                });
+
+                document.querySelectorAll('.botao-editar').forEach(botao => {
+                    botao.addEventListener('click', async function() {
+                        const id = this.getAttribute('data-id');
+                        const novaTarefa = prompt('Editar tarefa:', this.parentElement.previousElementSibling.textContent.trim().replace('Tarefa:', '').trim());
+                        if (novaTarefa && novaTarefa.trim() !== '') {
+                            try {
+                                await updateDoc(doc(db, 'tarefas', id), {
+                                    tarefa: novaTarefa
+                                });
+                                alert('Tarefa atualizada com sucesso!');
+                                carregarTarefas(); // Atualiza a lista de tarefas
+                            } catch (erro) {
+                                console.error('Erro ao atualizar a tarefa:', erro);
+                                alert('Houve um erro ao atualizar a tarefa. Erro: ' + erro.message);
+                            }
+                        }
+                    });
+                });
+
+            } catch (erro) {
+                console.error('Erro ao carregar tarefas:', erro);
+                alert('Houve um erro ao carregar as tarefas. Erro: ' + erro.message);
+            }
+        }
+
+        // Carregar tarefas quando a página for carregada
+        window.onload = carregarTarefas;
+    </script>
+</body>
+</html>
